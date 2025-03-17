@@ -1,2 +1,5 @@
 *.DS_Store
 media/*
+.env
+__pycache__/*
+video_summaries/*

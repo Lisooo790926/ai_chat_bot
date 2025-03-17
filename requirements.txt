@@ -4,7 +4,7 @@ openai
 yt_dlp
 youtube_transcript_api
 timeout-decorator
-dotenv
+python-dotenv
 langchain
 langchain-community
 langchain-qdrant
@@ -12,3 +12,8 @@ qdrant-client
 streamlit
 markdownify
 httpx
+fastapi
+uvicorn
+grpcio
+grpcio-tools
+protobuf
