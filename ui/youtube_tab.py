@@ -232,7 +232,7 @@ def _render_single_video_tab(bot, provider, dataset_name, language, txt):
                             if embed_to_rag:
                                 try:
                                     with st.spinner(f"Adding content to {dataset_name} dataset..." if language == "en" else f"將內容添加到 {dataset_name} 數據集..."):
-                                        from embedding import embed_text
+                                        from components.embedding import embed_text
                                         result = embed_text(
                                             collection="bootcamp",
                                             dataset=dataset_name,
@@ -394,7 +394,7 @@ def _render_multiple_videos_tab(bot, provider, dataset_name, language, txt):
                             # Add to RAG if requested
                             if embed_to_rag:
                                 try:
-                                    from embedding import embed_text
+                                    from components.embedding import embed_text
                                     embed_text(
                                         collection="bootcamp",
                                         dataset=dataset_name,
@@ -573,7 +573,7 @@ def _render_channel_tab(bot, provider, dataset_name, language, txt):
                                 # Optionally add to RAG
                                 if embed_to_rag:
                                     try:
-                                        from embedding import embed_text
+                                        from components.embedding import embed_text
                                         embed_text(
                                             collection="bootcamp",
                                             dataset=dataset_name,

@@ -24,7 +24,7 @@ def render_upload_tab(dataset_name, provider):
     st.header(upload_header)
     
     # Import here to avoid circular imports
-    from embedding import embed_text
+    from components.embedding import embed_text
     
     # Display the selected provider (informational only)
     st.info(upload_info.format(provider=provider.upper()))
