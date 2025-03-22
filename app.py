@@ -1,6 +1,6 @@
 import streamlit as st
 import logging
-from ragbot import RAGBot
+from components.ragbot import RAGBot
 from ui.chat_tab import render_chat_tab
 from ui.upload_tab import render_upload_tab
 from ui.youtube_tab import render_youtube_tab

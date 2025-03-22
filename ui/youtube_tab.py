@@ -4,7 +4,7 @@ import os
 import re
 import traceback
 import logging
-from youtube_to_md import YoutubeLoader, parse_video_id, get_youtube_videos
+from components.youtube_to_md import YoutubeLoader, parse_video_id, get_youtube_videos
 from langchain_core.prompts import ChatPromptTemplate
 
 logger = logging.getLogger(__name__)
