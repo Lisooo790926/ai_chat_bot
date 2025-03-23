@@ -233,7 +233,7 @@ def _render_single_video_tab(bot, provider, dataset_name, language, txt):
                                 try:
                                     with st.spinner(f"Adding content to {dataset_name} dataset..." if language == "en" else f"將內容添加到 {dataset_name} 數據集..."):
                                         from components.embedding import embed_text
-                                        result = embed_text(
+                                        qdrant = embed_text(
                                             collection="bootcamp",
                                             dataset=dataset_name,
                                             markdown_file=tmp_path,

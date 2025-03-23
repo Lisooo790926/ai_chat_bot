@@ -13,6 +13,7 @@ from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 from langchain_qdrant import QdrantVectorStore
 from dotenv import dotenv_values
 from pydantic import BaseModel
+from .embedding import get_embedding_model, get_vector_store_client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -42,7 +43,8 @@ class RAGBot:
             "Chat history: {chat_history}"
             "References: {context}"
         )
-
+        self.client = get_vector_store_client()
+    
     def get_llm_and_embeddings(self, provider="azure"):
         """Get LLM and embeddings models based on provider choice"""
         if provider == "azure":
@@ -53,23 +55,15 @@ class RAGBot:
                 api_key=self.config.get("AZURE_OPENAI_KEY"),
                 streaming=True,
             )
-            embedding_llm = AzureOpenAIEmbeddings(
-                azure_endpoint=self.config.get("AZURE_OPENAI_ENDPOINT"),
-                azure_deployment=self.config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
-                api_key=self.config.get("AZURE_OPENAI_KEY"),
-                openai_api_version=self.config.get("AZURE_OPENAI_API_VERSION"),
-            )
         else:
             generator_llm = GoogleGenerativeAI(
-                model="gemini-1.5-pro",
+                model="gemini-2.0-flash",
                 google_api_key=self.config.get("GOOGLE_API_KEY"),
                 temperature=0.7,
                 streaming=True,
             )
-            embedding_llm = GoogleGenerativeAIEmbeddings(
-                model="models/embedding-001",
-                google_api_key=self.config.get("GOOGLE_API_KEY"),
-            )
+        
+        embedding_llm, _ = get_embedding_model(provider)
         return generator_llm, embedding_llm
 
     async def get_response_stream(
@@ -88,11 +82,7 @@ class RAGBot:
         
         try:
             generator_llm, embedding_llm = self.get_llm_and_embeddings(provider)
-            question_answer_chain = create_stuff_documents_chain(generator_llm, prompt)
-            # should get from env
-            qdrant_url = self.config.get("QDRANT_URL")
-            client = QdrantClient(url=qdrant_url)
-            
+           
             # Determine provider-specific collection name
             provider_collection = f"{collection_name}_{provider}" if provider != "azure" else collection_name
             logger.info(f"Using collection: {provider_collection} with provider: {provider}")
@@ -100,85 +90,103 @@ class RAGBot:
             try:
                 # Try to use the provider-specific collection first
                 qdrant = QdrantVectorStore(
-                    client=client, 
+                    client=self.client, 
                     collection_name=provider_collection, 
                     embedding=embedding_llm
                 )
             except Exception as e:
-                # If provider-specific collection doesn't exist, create it
-                error_detail = traceback.format_exc()
-                logger.warning(f"Error accessing collection: {str(e)}\n{error_detail}")
-                
-                try:
-                    if "Not found: Collection" in str(e):
-                        logger.info(f"Collection {provider_collection} doesn't exist. Creating it.")
-                        # Get vector size based on provider
-                        vector_size = 768 if provider == "gemini" else 1536
-                        
-                        # Create the collection with the right dimensions
-                        client.create_collection(
-                            collection_name=provider_collection,
-                            vectors_config={
-                                "size": vector_size,
-                                "distance": "Cosine"
-                            },
-                            optimizers_config={
-                                "indexing_threshold": 20000
-                            },
-                            on_disk_payload=True
-                        )
-                        
-                        # Create empty vector store
-                        qdrant = QdrantVectorStore(
-                            client=client, 
-                            collection_name=provider_collection, 
-                            embedding=embedding_llm
-                        )
-                    else:
-                        # For other errors, fall back to the main collection
-                        logger.warning(f"Falling back to main collection: {provider_collection}")
-                        qdrant = QdrantVectorStore(
-                            client=client, 
-                            collection_name=collection_name, 
-                            embedding=embedding_llm
-                        )
-                except Exception as inner_e:
-                    # If all else fails, return a helpful error message
-                    inner_error_detail = traceback.format_exc()
-                    logger.error(f"Error setting up vector store: {str(inner_e)}\n{inner_error_detail}")
-                    yield f"I'm having trouble accessing the knowledge base. Error: {str(inner_e)}\n\nDebug info: {type(inner_e).__name__}"
-                    return
-                    
-            retriever = qdrant.as_retriever(
-                search_kwargs=dict(
-                    k=3,
-                    filter=Filter(
-                        must=[
-                            FieldCondition(
-                                key="metadata.dataset",
-                                match=MatchValue(value=dataset_name),
-                            )
-                        ]
-                    ),
-                )
-            )
+                qdrant = self.create_collection_if_not_found(provider, provider_collection, collection_name, e)
 
-            rag_chain = create_retrieval_chain(retriever, question_answer_chain)
-            chain = rag_chain.pick("answer")
+            if qdrant is None:
+                raise Exception("Failed to create collection")
             
-            try:
-                response_stream = chain.stream({"input": user_query, "chat_history": chat_history})
-                for chunk in response_stream:
-                    yield chunk
-            except Exception as e:
-                error_detail = traceback.format_exc()
-                logger.error(f"Error generating response: {str(e)}\n{error_detail}")
-                yield f"Error generating response: {str(e)}\n\nDebug info: {type(e).__name__}"
+            question_answer_chain = create_stuff_documents_chain(generator_llm, prompt)
+            response_stream = self.generate_response(qdrant, user_query, chat_history, dataset_name, question_answer_chain)
+            
+            for chunk in response_stream:
+                yield chunk
+
         except Exception as e:
             error_detail = traceback.format_exc()
             logger.error(f"Unexpected error in response stream: {str(e)}\n{error_detail}")
             yield f"An unexpected error occurred: {str(e)}\n\nDebug info: {type(e).__name__}"
 
+    async def generate_response(self, qdrant, user_query: str, chat_history: List[schema.HumanMessage], dataset_name: str, question_answer_chain):
+
+        retriever = qdrant.as_retriever(
+            search_kwargs=dict(
+                k=5, # number of chunks to retrieve
+                filter=Filter(
+                    min_should=2,
+                    should=[
+                        FieldCondition(
+                            key="metadata.dataset",
+                            match=MatchValue(value=dataset_name),
+                        )
+                    ]
+                ),
+            )
+        )
+
+        rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+        chain = rag_chain.pick("answer")
+        
+        try:
+            response_stream = chain.stream({"input": user_query, "chat_history": chat_history})
+            return response_stream
+        except Exception as e:
+            error_detail = traceback.format_exc()
+            logger.error(f"Error generating response: {str(e)}\n{error_detail}")
+            return f"Error generating response: {str(e)}\n\nDebug info: {type(e).__name__}"
+
+    def create_collection_if_not_found(self, provider: str, provider_collection: str, default_collection: str, e: Exception):
+        # If provider-specific collection doesn't exist, create it
+        error_detail = traceback.format_exc()
+        logger.warning(f"Error accessing collection: {str(e)}\n{error_detail}")
+        
+        try:
+            if "Not found: Collection" in str(e):
+                logger.info(f"Collection {provider_collection} doesn't exist. Creating it.")
+                # Get vector size based on provider
+                embedding_llm, vector_size = get_embedding_model(provider)
+                
+                # Create the collection with the right dimensions
+                self.client.create_collection(
+                    collection_name=provider_collection,
+                    vectors_config={
+                        "size": vector_size,
+                        "distance": "Cosine"
+                    },
+                    optimizers_config={
+                        "indexing_threshold": 20000
+                    },
+                    on_disk_payload=True
+                )
+                
+                # Create empty vector store
+                qdrant = QdrantVectorStore(
+                    client=self.client, 
+                    collection_name=provider_collection, 
+                    embedding=embedding_llm
+                )
+                return qdrant
+            else:
+                # For other errors, fall back to the main collection
+                logger.warning(f"Falling back to main collection: {provider_collection}")
+                qdrant = QdrantVectorStore(
+                    client=self.client, 
+                    collection_name=default_collection, 
+                    embedding=embedding_llm
+                )
+                return qdrant
+
+        except Exception as inner_e:
+            # If all else fails, return a helpful error message
+            inner_error_detail = traceback.format_exc()
+            logger.error(f"Error setting up vector store: {str(inner_e)}\n{inner_error_detail}")
+            yield f"I'm having trouble accessing the knowledge base. Error: {str(inner_e)}\n\nDebug info: {type(inner_e).__name__}"
+            return
+    
     def validate_dataset(self, dataset_name: str) -> bool:
         """Validate if dataset exists"""
         return dataset_name in self.datasets

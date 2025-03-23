@@ -25,26 +25,11 @@ def embed_text(collection, dataset, markdown_file, provider="azure", force_recre
     with open(markdown_file, "r", encoding="utf-8") as f:
         markdown_text = f.read()
 
-    config = dotenv_values(".env")
-    client = QdrantClient(url="http://localhost:6333")
-
+    client = get_vector_store_client()
     collection_name = f"{collection}_{provider}" if provider != "azure" else collection
 
-    # Get the appropriate embedding model
-    if provider == "azure":
-        embedding_llm = AzureOpenAIEmbeddings(
-            azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
-            azure_deployment=config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
-            api_key=config.get("AZURE_OPENAI_KEY"),
-            openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
-        )
-        vector_size = 1536  # OpenAI embedding size
-    else:
-        embedding_llm = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
-            google_api_key=config.get("GOOGLE_API_KEY"),
-        )
-        vector_size = 768  # Google embedding size
+    # Get the embedding model and vector size
+    embedding_llm, vector_size = get_embedding_model(provider)
 
     # Force recreate if requested or if dimensions don't match
     if force_recreate:
@@ -79,12 +64,15 @@ def embed_text(collection, dataset, markdown_file, provider="azure", force_recre
     documents = markdown_splitter.split_documents([doc])
 
     try:
+        # return a vector store
         qdrant = QdrantVectorStore.from_documents(
             documents,
             embedding=embedding_llm,
             url="http://localhost:6333",
             collection_name=collection_name,
         )
+
+        print(f"Documents embedded into {collection_name} collection")
         return qdrant
     except Exception as e:
         print(f"Error embedding documents: {e}")
@@ -93,3 +81,34 @@ def embed_text(collection, dataset, markdown_file, provider="azure", force_recre
             print("Dimensions mismatch detected. Recreating collection...")
             return embed_text(collection, dataset, markdown_file, provider, force_recreate=True)
         raise
+
+def get_embedding_model(provider="azure"):
+
+    """
+    Get embedding model based on provider choice
+    Returns:
+        tuple: (embedding_model, vector_size)
+    """
+    config = dotenv_values(".env")
+    
+    if provider == "azure":
+        embedding_llm = AzureOpenAIEmbeddings(
+            azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
+            azure_deployment=config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
+            api_key=config.get("AZURE_OPENAI_KEY"),
+            openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
+        )
+        vector_size = 1536  # OpenAI embedding size
+    else:
+        embedding_llm = GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-exp-03-07",
+            google_api_key=config.get("GOOGLE_API_KEY"),
+        )
+        vector_size = 3072  # Google embedding size
+    
+    return embedding_llm, vector_size 
+
+
+def get_vector_store_client():
+    config = dotenv_values(".env")
+    return QdrantClient(url=config.get("QDRANT_URL"))
