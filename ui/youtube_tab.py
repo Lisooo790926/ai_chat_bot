@@ -407,7 +407,7 @@ def process_playlist_videos(playlist_url, content_type, output_folder, save_to_m
         
         # Create output folder if needed
         if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+            os.makedirs(f"downloads/{output_folder}")
         
         # Process videos
         progress_bar = st.progress(0)
