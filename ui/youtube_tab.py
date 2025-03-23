@@ -116,153 +116,175 @@ def render_youtube_tab(bot, provider, dataset_name):
             - When processing multiple videos, be patient - each video takes time to process
             """)
 
+def process_single_video(url, content_type, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
+    """Process a single YouTube video"""
+    try:
+        # Load video transcript
+        with st.spinner("Extracting video transcript..." if language == "en" else "正在提取影片字幕..."):
+            yt_loader = YoutubeLoader()
+            content = yt_loader.load(url)
+            
+            if not content:
+                st.error("Could not extract transcript from this video." if language == "en" else "無法從此影片提取字幕。")
+                return
+                
+        # Get video metadata for filename
+        video_id = parse_video_id(url)
+                
+        with st.spinner("Processing content..." if language == "en" else "處理內容中..."):
+            # Get LLM model and process content
+            generator_llm, _ = bot.get_llm_and_embeddings(provider)
+            system_prompt = _get_summary_prompt(content_type, language)
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                ("human", f"Video transcript: {content}" if language == "en" else f"影片字幕: {content}"),
+            ])
+            
+            chain = prompt | generator_llm
+            response = chain.invoke({})
+                        
+            # Handle response
+            markdown_content = response.content if hasattr(response, 'content') else response
+            st.markdown(markdown_content)
+                    
+            # Handle file saving and RAG embedding
+            handle_output(markdown_content, video_id, save_to_md, embed_to_rag, bot, provider, dataset_name, language)
+            
+    except Exception as e:
+        handle_error(e, "processing YouTube video", language)
+
+def process_multiple_videos(urls, content_type, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
+    """Process multiple YouTube videos"""
+    try:
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        
+        progress_bar = st.progress(0)
+        generator_llm, _ = bot.get_llm_and_embeddings(provider)
+        system_prompt = _get_summary_prompt(content_type, language)
+        chain = create_processing_chain(generator_llm, system_prompt)
+        
+        return process_video_batch(
+            urls, chain, output_folder, save_to_md, embed_to_rag,
+            dataset_name, provider, language, progress_bar
+        )
+        
+    except Exception as e:
+        handle_error(e, "processing multiple videos", language)
+        return [], []
+
+def process_channel_videos(channel_url, max_videos, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
+    """Process videos from a YouTube channel"""
+    try:
+        videos = get_youtube_videos(channel_url)[:max_videos]
+        if not videos:
+            st.error("No videos found in this channel." if language == "en" else "在此頻道中找不到影片。")
+            return
+            
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+            
+        progress_bar = st.progress(0)
+        generator_llm, _ = bot.get_llm_and_embeddings(provider)
+        system_prompt = _get_summary_prompt("Bullet Points", language)
+        chain = create_processing_chain(generator_llm, system_prompt)
+        
+        return process_video_batch(
+            videos, chain, output_folder, save_to_md, embed_to_rag,
+            dataset_name, provider, language, progress_bar
+        )
+        
+    except Exception as e:
+        handle_error(e, "processing YouTube channel", language)
+
+def handle_output(content, video_id, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
+    """Handle file saving and RAG embedding"""
+    try:
+        title_match = re.search(r'# (.+)', content)
+        if title_match:
+            title = title_match.group(1)
+            safe_title = "".join(c if c.isalnum() or c in [' ', '-', '_'] else '_' for c in title)
+            filename = f"{safe_title[:50]}.md"
+        else:
+            filename = f"youtube_{video_id}.md"
+        
+        if save_to_md:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".md") as tmp_file:
+                    tmp_path = tmp_file.name
+        tmp_file.write(content.encode('utf-8'))
+                    
+        with open(tmp_path, "r", encoding="utf-8") as f:
+            st.download_button(
+                label="Download as Markdown" if language == "en" else "下載為 Markdown",
+                data=f.read(),
+                file_name=filename,
+                mime="text/markdown",
+                key=f"download_{video_id}"
+            )
+                    
+        if embed_to_rag:
+            embed_to_rag_database(tmp_path, dataset_name, provider, language)
+
+        os.unlink(tmp_path)
+            
+    except Exception as e:
+        handle_error(e, "handling file operations", language)
+
+def embed_to_rag_database(file_path, dataset_name, provider, language):
+    """Embed content into RAG database"""
+    try:
+        from components.embedding import embed_text
+        # Shows a loading spinner while embedding content
+        # Uses English or Chinese text based on language setting
+        with st.spinner(f"Adding content to {dataset_name} dataset..." if language == "en" else f"將內容添加到 {dataset_name} 數據集..."):
+            embed_text(
+                collection="bootcamp",
+                dataset=dataset_name,
+                markdown_file=file_path,
+                provider=provider,
+                force_recreate=False
+            )
+        
+        # Shows success message after embedding completes
+        # Uses English or Chinese text based on language setting
+        st.success(f"Content successfully added to the {dataset_name} dataset!" if language == "en" else f"內容已成功添加到 {dataset_name} 數據集！")
+    except Exception as e:
+        st.warning(f"Error adding to RAG database: {str(e)}" if language == "en" else f"添加到 RAG 數據庫時出錯: {str(e)}")
+
+def handle_error(error, context, language):
+    """Handle and display errors"""
+    
+    error_detail = traceback.format_exc()
+    logger.error(f"Error {context}: {str(error)}\n{error_detail}")
+    st.error(f"Error {context}: {str(error)}" if language == "en" else f"處理時出錯: {str(error)}")
+    
+    with st.expander("Debug Information"):
+        st.code(error_detail)
+                            
 def _render_single_video_tab(bot, provider, dataset_name, language, txt):
     """Render the single video tab"""
-    # YouTube URL input
-    youtube_url = st.text_input(
-        txt.get("youtube_url", "Enter YouTube Video URL"), 
-        placeholder="https://www.youtube.com/watch?v=..."
-    )
+    youtube_url = st.text_input(txt.get("youtube_url", "Enter YouTube Video URL"), 
+                                placeholder="https://www.youtube.com/watch?v=...")
     
-    # Content type selection
     content_options = ["Detailed", "Concise", "Bullet Points"]
     content_options_zh = ["詳細", "簡潔", "重點列表"]
-    content_type = st.radio(
-        txt.get("summary_style", "Summary Style:"),
-        options=content_options_zh if language == "zh-TW" else content_options,
-        horizontal=True
-    )
+    content_type = st.radio(txt.get("summary_style", "Summary Style:"),
+                            options=content_options_zh if language == "zh-TW" else content_options,
+                            horizontal=True)
     
-    # Map Chinese options back to English for processing
     if language == "zh-TW":
         content_map = dict(zip(content_options_zh, content_options))
         content_type = content_map.get(content_type, content_type)
     
-    # Processing options
     col1, col2 = st.columns(2)
     with col1:
         save_to_md = st.checkbox(txt.get("save_md", "Save as Markdown file"), value=True)
     with col2:
         embed_to_rag = st.checkbox(txt.get("add_rag", "Add to RAG database"), value=True)
     
-    if st.button(txt.get("process_video", "Process Video")):
+    if st.button(txt.get("process_video", "Process Video"), key="single_video_process_btn"):
         if youtube_url:
-            try:
-                # Load video transcript
-                with st.spinner("Extracting video transcript..." if language == "en" else "正在提取影片字幕..."):
-                    try:
-                        yt_loader = YoutubeLoader()
-                        content = yt_loader.load(youtube_url)
-                        
-                        if not content:
-                            st.error("Could not extract transcript from this video." if language == "en" else "無法從此影片提取字幕。")
-                            st.stop()
-                    except Exception as transcript_error:
-                        error_detail = traceback.format_exc()
-                        logger.error(f"Error extracting transcript: {str(transcript_error)}\n{error_detail}")
-                        st.error(f"Error extracting transcript: {str(transcript_error)}" if language == "en" else f"提取字幕時出錯: {str(transcript_error)}")
-                        with st.expander("Debug Information"):
-                            st.code(error_detail)
-                        st.stop()
-                
-                # Get video metadata for filename
-                video_id = parse_video_id(youtube_url)
-                
-                with st.spinner("Processing content..." if language == "en" else "處理內容中..."):
-                    try:
-                        # Choose prompt based on content type and language
-                        system_prompt = _get_summary_prompt(content_type, language)
-                        
-                        # Get LLM model based on provider selection
-                        generator_llm, _ = bot.get_llm_and_embeddings(provider)
-                        
-                        # Process with LangChain
-                        prompt = ChatPromptTemplate.from_messages([
-                            ("system", system_prompt),
-                            ("human", f"Video transcript: {content}" if language == "en" else f"影片字幕: {content}"),
-                        ])
-                        
-                        chain = prompt | generator_llm
-                        logger.info(f"Processing video: {youtube_url} with style: {content_type}")
-                        response = chain.invoke({})
-                        
-                        # Handle both string responses and object responses with .content attribute
-                        if hasattr(response, 'content'):
-                            markdown_content = response.content
-                        else:
-                            markdown_content = response  # If response is already a string
-                    except Exception as processing_error:
-                        error_detail = traceback.format_exc()
-                        logger.error(f"Error processing content: {str(processing_error)}\n{error_detail}")
-                        st.error(f"Error processing content: {str(processing_error)}" if language == "en" else f"處理內容時出錯: {str(processing_error)}")
-                        with st.expander("Debug Information"):
-                            st.code(error_detail)
-                        st.stop()
-                    
-                    # Display the generated content
-                    st.markdown(markdown_content)
-                    
-                    # Extract title for filename
-                    title_match = re.search(r'# (.+)', markdown_content)
-                    if title_match:
-                        title = title_match.group(1)
-                        safe_title = "".join(c if c.isalnum() or c in [' ', '-', '_'] else '_' for c in title)
-                        filename = f"{safe_title[:50]}.md"
-                    else:
-                        filename = f"youtube_{video_id}.md"
-                    
-                    # Save to file if requested
-                    if save_to_md:
-                        try:
-                            # Create temp file
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".md") as tmp_file:
-                                tmp_path = tmp_file.name
-                                tmp_file.write(markdown_content.encode('utf-8'))
-                            
-                            # Provide download button
-                            with open(tmp_path, "r", encoding="utf-8") as f:
-                                st.download_button(
-                                    label="Download as Markdown" if language == "en" else "下載為 Markdown",
-                                    data=f.read(),
-                                    file_name=filename,
-                                    mime="text/markdown"
-                                )
-                            
-                            # Add to RAG if requested
-                            if embed_to_rag:
-                                try:
-                                    with st.spinner(f"Adding content to {dataset_name} dataset..." if language == "en" else f"將內容添加到 {dataset_name} 數據集..."):
-                                        from components.embedding import embed_text
-                                        qdrant = embed_text(
-                                            collection="bootcamp",
-                                            dataset=dataset_name,
-                                            markdown_file=tmp_path,
-                                            provider=provider,
-                                            force_recreate=False
-                                        )
-                                        st.success(f"Content successfully added to the {dataset_name} dataset!" if language == "en" else f"內容已成功添加到 {dataset_name} 數據集！")
-                                except Exception as embed_error:
-                                    error_detail = traceback.format_exc()
-                                    logger.error(f"Error adding to RAG database: {str(embed_error)}\n{error_detail}")
-                                    st.error(f"Error adding to RAG database: {str(embed_error)}" if language == "en" else f"添加到 RAG 數據庫時出錯: {str(embed_error)}")
-                                    with st.expander("Debug Information"):
-                                        st.code(error_detail)
-                            
-                            # Clean up temp file
-                            os.unlink(tmp_path)
-                        except Exception as file_error:
-                            error_detail = traceback.format_exc()
-                            logger.error(f"Error handling file operations: {str(file_error)}\n{error_detail}")
-                            st.error(f"Error handling file operations: {str(file_error)}" if language == "en" else f"處理文件操作時出錯: {str(file_error)}")
-                            with st.expander("Debug Information"):
-                                st.code(error_detail)
-            
-            except Exception as e:
-                error_detail = traceback.format_exc()
-                logger.error(f"Error processing YouTube video: {str(e)}\n{error_detail}")
-                st.error(f"Error processing YouTube video: {str(e)}" if language == "en" else f"處理 YouTube 影片時出錯: {str(e)}")
-                with st.expander("Debug Information"):
-                    st.code(error_detail)
+            process_single_video(youtube_url, content_type, save_to_md, embed_to_rag, bot, provider, dataset_name, language)
         else:
             st.warning(txt.get("error_no_url", "Please enter a YouTube video URL"))
 
@@ -300,154 +322,12 @@ def _render_multiple_videos_tab(bot, provider, dataset_name, language, txt):
     # Output folder
     output_folder = st.text_input(txt.get("output_folder", "Output folder for markdown files"), value="video_summaries", key="multi_output_folder")
     
-    if st.button(txt.get("process_videos", "Process Videos")):
+    if st.button(txt.get("process_videos", "Process Videos"), key="multiple_videos_process_btn"):
         # Split the input by lines and clean
         urls = [url.strip() for url in youtube_urls.split('\n') if url.strip()]
         
         if urls:
-            try:
-                # Create output folder if it doesn't exist
-                if not os.path.exists(output_folder):
-                    os.makedirs(output_folder)
-                
-                # Display progress bar
-                progress_bar = st.progress(0)
-                
-                # Get LLM model based on provider selection
-                try:
-                    generator_llm, _ = bot.get_llm_and_embeddings(provider)
-                    
-                    # Choose prompt based on content type and language
-                    system_prompt = _get_summary_prompt(content_type, language)
-                    
-                    # Create prompt template
-                    prompt = ChatPromptTemplate.from_messages([
-                        ("system", system_prompt),
-                        ("human", "Video transcript: {transcript}" if language == "en" else "影片字幕: {transcript}"),
-                    ])
-                    
-                    # Create processing chain
-                    chain = prompt | generator_llm
-                except Exception as model_error:
-                    error_detail = traceback.format_exc()
-                    logger.error(f"Error initializing AI model: {str(model_error)}\n{error_detail}")
-                    st.error(f"Error initializing AI model: {str(model_error)}" if language == "en" else f"初始化 AI 模型時出錯: {str(model_error)}")
-                    with st.expander("Debug Information"):
-                        st.code(error_detail)
-                    st.stop()
-                
-                # Process each video
-                yt_loader = YoutubeLoader()
-                processed_videos = []
-                failed_videos = []
-                
-                for i, url in enumerate(urls):
-                    try:
-                        # Display status
-                        st.write(f"Processing video {i+1}/{len(urls)}: {url}" if language == "en" else f"處理影片 {i+1}/{len(urls)}: {url}")
-                        logger.info(f"Processing video [{i+1}/{len(urls)}]: {url}")
-                        
-                        # Extract transcript
-                        try:
-                            content = yt_loader.load(url)
-                            
-                            if not content:
-                                st.warning(f"Could not extract transcript from: {url}" if language == "en" else f"無法從此影片提取字幕: {url}")
-                                failed_videos.append({"url": url, "reason": "No transcript available" if language == "en" else "無法獲取字幕"})
-                                continue
-                        except Exception as transcript_error:
-                            error_detail = traceback.format_exc()
-                            logger.warning(f"Error extracting transcript: {str(transcript_error)}\n{error_detail}")
-                            st.warning(f"Error extracting transcript from: {url}" if language == "en" else f"提取字幕時出錯: {url}")
-                            failed_videos.append({"url": url, "reason": f"Transcript error: {str(transcript_error)}" if language == "en" else f"字幕錯誤: {str(transcript_error)}"})
-                            continue
-                        
-                        # Process with AI
-                        try:
-                            # Generate summary
-                            response = chain.invoke({"transcript": content})
-                            
-                            # Handle both string responses and object responses with .content attribute
-                            if hasattr(response, 'content'):
-                                markdown_content = response.content
-                            else:
-                                markdown_content = response  # If response is already a string
-                            
-                            # Extract title for filename
-                            video_id = parse_video_id(url)
-                            title_match = re.search(r'# (.+)', markdown_content)
-                            if title_match:
-                                title = title_match.group(1)
-                                safe_title = "".join(c if c.isalnum() or c in [' ', '-', '_'] else '_' for c in title)
-                                filename = f"{safe_title[:50]}.md"
-                            else:
-                                filename = f"youtube_{video_id}.md"
-                            
-                            # Save to file
-                            file_path = f"{output_folder}/{filename}"
-                            with open(file_path, "w", encoding="utf-8") as f:
-                                f.write(markdown_content)
-                            
-                            # Add to processed list
-                            processed_videos.append({"url": url, "file": file_path, "content": markdown_content})
-                            
-                            # Add to RAG if requested
-                            if embed_to_rag:
-                                try:
-                                    from components.embedding import embed_text
-                                    embed_text(
-                                        collection="bootcamp",
-                                        dataset=dataset_name,
-                                        markdown_file=file_path,
-                                        provider=provider,
-                                        force_recreate=False
-                                    )
-                                except Exception as embed_error:
-                                    error_detail = traceback.format_exc()
-                                    logger.warning(f"Error adding to RAG database: {str(embed_error)}\n{error_detail}")
-                                    st.warning(f"Error adding {url} to RAG database: {str(embed_error)}" if language == "en" else f"將 {url} 添加到 RAG 數據庫時出錯: {str(embed_error)}")
-                        except Exception as processing_error:
-                            error_detail = traceback.format_exc()
-                            logger.warning(f"Error processing content: {str(processing_error)}\n{error_detail}")
-                            st.warning(f"Error processing video: {url}" if language == "en" else f"處理影片時出錯: {url}")
-                            failed_videos.append({"url": url, "reason": f"Processing error: {str(processing_error)}" if language == "en" else f"處理錯誤: {str(processing_error)}"})
-                            continue
-                    
-                    except Exception as video_error:
-                        error_detail = traceback.format_exc()
-                        logger.warning(f"Error processing video: {str(video_error)}\n{error_detail}")
-                        st.warning(f"Error processing video: {url}" if language == "en" else f"處理影片時出錯: {url}")
-                        failed_videos.append({"url": url, "reason": f"Unknown error: {str(video_error)}" if language == "en" else f"未知錯誤: {str(video_error)}"})
-                    
-                    # Update progress bar
-                    progress_bar.progress((i + 1) / len(urls))
-                
-                # Show results
-                if processed_videos:
-                    st.success(f"Successfully processed {len(processed_videos)} out of {len(urls)} videos!" if language == "en" else f"成功處理 {len(processed_videos)} 個影片，共 {len(urls)} 個！")
-                    
-                    # Show preview of first video
-                    if len(processed_videos) > 0:
-                        with st.expander("Preview first processed video" if language == "en" else "預覽第一個處理的影片"):
-                            st.markdown(processed_videos[0]["content"])
-                    
-                    # List all processed videos
-                    with st.expander("All Processed Videos" if language == "en" else "所有處理的影片"):
-                        for video in processed_videos:
-                            st.write(f"- {video['url']} → {video['file']}")
-                
-                # Show failed videos if any
-                if failed_videos:
-                    with st.expander(f"Failed Videos ({len(failed_videos)})" if language == "en" else f"處理失敗的影片 ({len(failed_videos)})"):
-                        for video in failed_videos:
-                            st.write(f"- {video['url']}: {video['reason']}")
-            
-            except Exception as e:
-                error_detail = traceback.format_exc()
-                logger.error(f"Error processing multiple videos: {str(e)}\n{error_detail}")
-                st.error(f"Error processing multiple videos: {str(e)}" if language == "en" else f"處理多個影片時出錯: {str(e)}")
-                with st.expander("Debug Information"):
-                    st.code(error_detail)
+            process_multiple_videos(urls, content_type, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language)
         else:
             st.warning(txt.get("error_no_urls", "Please enter at least one YouTube URL"))
 
@@ -475,147 +355,9 @@ def _render_channel_tab(bot, provider, dataset_name, language, txt):
     with col2:
         embed_to_rag = st.checkbox(txt.get("add_rag", "Add to RAG database"), value=True, key="channel_embed_rag")
     
-    if st.button(txt.get("process_channel", "Process Channel")):
+    if st.button(txt.get("process_channel", "Process Channel"), key="channel_process_btn"):
         if channel_url:
-            try:
-                with st.spinner("Fetching channel videos..." if language == "en" else "正在獲取頻道影片..."):
-                    try:
-                        videos = get_youtube_videos(channel_url)
-                        
-                        if not videos:
-                            st.error("No videos found in this channel." if language == "en" else "在此頻道中找不到影片。")
-                            st.stop()
-                    except Exception as channel_error:
-                        error_detail = traceback.format_exc()
-                        logger.error(f"Error fetching channel videos: {str(channel_error)}\n{error_detail}")
-                        st.error(f"Error fetching channel videos: {str(channel_error)}" if language == "en" else f"獲取頻道影片時出錯: {str(channel_error)}")
-                        with st.expander("Debug Information"):
-                            st.code(error_detail)
-                        st.stop()
-                    
-                    # Limit to max_videos
-                    videos = videos[:max_videos]
-                    
-                    # Create output folder if it doesn't exist
-                    if not os.path.exists(output_folder):
-                        os.makedirs(output_folder)
-                    
-                    # Display progress bar
-                    progress_bar = st.progress(0)
-                    
-                    try:
-                        # Get LLM model
-                        generator_llm, _ = bot.get_llm_and_embeddings(provider)
-                        
-                        # Create summary prompt
-                        summary_prompt = ChatPromptTemplate.from_messages([
-                            ("system", (
-                                _get_summary_prompt("Bullet Points", language)
-                            )),
-                            ("human", "{transcript}" if language == "en" else "影片字幕: {transcript}")
-                        ])
-                        
-                        # Create chain
-                        summary_chain = summary_prompt | generator_llm
-                    except Exception as model_error:
-                        error_detail = traceback.format_exc()
-                        logger.error(f"Error initializing AI model: {str(model_error)}\n{error_detail}")
-                        st.error(f"Error initializing AI model: {str(model_error)}" if language == "en" else f"初始化 AI 模型時出錯: {str(model_error)}")
-                        with st.expander("Debug Information"):
-                            st.code(error_detail)
-                        st.stop()
-                    
-                    # Process each video
-                    yt_loader = YoutubeLoader()
-                    processed_videos = []
-                    
-                    for i, video in enumerate(videos):
-                        try:
-                            # Update status
-                            st.write(f"Processing: {video['title']}" if language == "en" else f"正在處理: {video['title']}")
-                            logger.info(f"Processing video [{i+1}/{len(videos)}]: {video['title']}")
-                            
-                            # Get transcript
-                            try:
-                                content = yt_loader.load(video['url'])
-                                
-                                if not content:
-                                    st.warning(f"Could not extract transcript for: {video['title']}" if language == "en" else f"無法提取此影片的字幕: {video['title']}")
-                                    continue
-                            except Exception as transcript_error:
-                                error_detail = traceback.format_exc()
-                                logger.warning(f"Error extracting transcript for video {video['title']}: {str(transcript_error)}\n{error_detail}")
-                                st.warning(f"Error extracting transcript for: {video['title']} - {str(transcript_error)}" if language == "en" else f"提取字幕時出錯: {video['title']} - {str(transcript_error)}")
-                                continue
-                            
-                            # Process with LangChain
-                            try:
-                                response = summary_chain.invoke({"transcript": f"Video transcript: {content}" if language == "en" else f"影片字幕: {content}"})
-                                
-                                # Handle both string responses and object responses with .content attribute
-                                if hasattr(response, 'content'):
-                                    markdown_summary = response.content
-                                else:
-                                    markdown_summary = response
-                                
-                                # Create safe filename
-                                safe_title = "".join(c if c.isalnum() or c in [' ', '-', '_'] else '_' for c in video['title'])
-                                filename = f"{output_folder}/{safe_title[:50]}.md"
-                                
-                                # Save to file
-                                if save_to_md:
-                                    with open(filename, "w", encoding="utf-8") as f:
-                                        f.write(markdown_summary)
-                                
-                                # Add to processed list
-                                processed_videos.append({"title": video['title'], "file": filename})
-                                
-                                # Optionally add to RAG
-                                if embed_to_rag:
-                                    try:
-                                        from components.embedding import embed_text
-                                        embed_text(
-                                            collection="bootcamp",
-                                            dataset=dataset_name,
-                                            markdown_file=filename,
-                                            provider=provider,
-                                            force_recreate=False
-                                        )
-                                    except Exception as embed_error:
-                                        error_detail = traceback.format_exc()
-                                        logger.warning(f"Error adding video {video['title']} to RAG: {str(embed_error)}\n{error_detail}")
-                                        st.warning(f"Error adding {video['title']} to RAG database: {str(embed_error)}" if language == "en" else f"將 {video['title']} 添加到 RAG 數據庫時出錯: {str(embed_error)}")
-                            except Exception as processing_error:
-                                error_detail = traceback.format_exc()
-                                logger.warning(f"Error processing video {video['title']}: {str(processing_error)}\n{error_detail}")
-                                st.warning(f"Error processing video: {video['title']} - {str(processing_error)}" if language == "en" else f"處理影片時出錯: {video['title']} - {str(processing_error)}")
-                                continue
-                            
-                            # Update progress
-                            progress_bar.progress((i + 1) / len(videos))
-                        
-                        except Exception as video_error:
-                            error_detail = traceback.format_exc()
-                            logger.warning(f"Error in video loop for {video['title']}: {str(video_error)}\n{error_detail}")
-                            st.warning(f"Error processing {video['title']}: {str(video_error)}" if language == "en" else f"處理 {video['title']} 時出錯: {str(video_error)}")
-                    
-                    # Show completion message
-                    if processed_videos:
-                        st.success(f"Successfully processed {len(processed_videos)} videos!" if language == "en" else f"成功處理 {len(processed_videos)} 個影片！")
-                        
-                        # Display processed files
-                        st.subheader("Processed Videos:" if language == "en" else "已處理的影片:")
-                        for video in processed_videos:
-                            st.write(f"- {video['title']} → {video['file']}")
-                    else:
-                        st.error("Could not process any videos from this channel." if language == "en" else "無法處理此頻道的任何影片。")
-            
-            except Exception as e:
-                error_detail = traceback.format_exc()
-                logger.error(f"Error processing YouTube channel: {str(e)}\n{error_detail}")
-                st.error(f"Error processing YouTube channel: {str(e)}" if language == "en" else f"處理 YouTube 頻道時出錯: {str(e)}")
-                with st.expander("Debug Information"):
-                    st.code(error_detail)
+            process_channel_videos(channel_url, max_videos, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language)
         else:
             st.warning(txt.get("error_no_channel", "Please enter a YouTube channel URL"))
 
@@ -702,3 +444,120 @@ def _get_summary_prompt(content_type, language):
                 "## Conclusion\n"
                 "Final thoughts and takeaways from the video."
             ) 
+
+def process_single_video_content(video_info, yt_loader, chain, output_folder, save_to_md, embed_to_rag, dataset_name, provider, language):
+    """Process a single video and return its processed content or None if failed"""
+    try:
+        # Get video details
+        url = video_info.get('url')
+        title = video_info.get('title', '')
+        
+        # Extract transcript
+        content = yt_loader.load(url)
+        if not content:
+            raise ValueError("No transcript available")
+            
+        # Process with AI
+        input_text = f"Video transcript: {content}" if language == "en" else f"影片字幕: {content}"
+        response = chain.invoke({"transcript": input_text})
+        markdown_content = response.content if hasattr(response, 'content') else response
+        
+        # Generate filename
+        if not title:
+            video_id = parse_video_id(url)
+            title_match = re.search(r'# (.+)', markdown_content)
+            title = title_match.group(1) if title_match else f"youtube_{video_id}"
+            
+        safe_title = "".join(c if c.isalnum() or c in [' ', '-', '_'] else '_' for c in title)
+        filename = f"{output_folder}/{safe_title[:50]}.md"
+        
+        # Save to file if requested
+        if save_to_md:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(markdown_content)
+            
+            # Add to RAG if requested
+            if embed_to_rag:
+                embed_to_rag_database(filename, dataset_name, provider, language)
+        
+        return {
+            "url": url,
+            "title": title,
+            "file": filename,
+            "content": markdown_content,
+            "success": True
+        }
+        
+    except Exception as e:
+        logger.warning(f"Error processing video {title or url}: {str(e)}")
+        return {
+            "url": url,
+            "title": title,
+            "success": False,
+            "reason": str(e)
+        }
+
+def process_video_batch(videos, chain, output_folder, save_to_md, embed_to_rag, dataset_name, provider, language, progress_bar):
+    """Process a batch of videos and return results"""
+    yt_loader = YoutubeLoader()
+    processed_videos = []
+    failed_videos = []
+    
+    for i, video in enumerate(videos):
+        # Convert to standard video info format
+        video_info = (
+            {"url": video, "title": ""}  # For URL-only input
+            if isinstance(video, str)
+            else {"url": video['url'], "title": video['title']}  # For channel videos
+        )
+        
+        # Display processing status
+        status_text = video_info['title'] or video_info['url']
+        st.write(f"Processing video {i+1}/{len(videos)}: {status_text}" if language == "en" 
+                else f"處理影片 {i+1}/{len(videos)}: {status_text}")
+        
+        # Process video
+        result = process_single_video_content(
+            video_info, yt_loader, chain, output_folder, 
+            save_to_md, embed_to_rag, dataset_name, provider, language
+        )
+        
+        # Sort results
+        if result['success']:
+            processed_videos.append(result)
+        else:
+            failed_videos.append(result)
+        
+        # Update progress
+        progress_bar.progress((i + 1) / len(videos))
+    
+    # Display results
+    display_batch_results(processed_videos, failed_videos, language)
+    
+    return processed_videos, failed_videos
+
+def display_batch_results(processed_videos, failed_videos, language):
+    """Display the results of batch processing"""
+    if processed_videos:
+        st.success(f"Successfully processed {len(processed_videos)} videos!" if language == "en" 
+                  else f"成功處理 {len(processed_videos)} 個影片！")
+        
+        # Show preview of first video
+        if processed_videos:
+            with st.expander("Preview first processed video" if language == "en" else "預覽第一個處理的影片"):
+                st.markdown(processed_videos[0]["content"])
+        
+        # List all processed videos
+        with st.expander("All Processed Videos" if language == "en" else "所有處理的影片"):
+            for video in processed_videos:
+                display_text = video['title'] or video['url']
+                st.write(f"- {display_text} → {video['file']}")
+    
+    if failed_videos:
+        with st.expander(f"Failed Videos ({len(failed_videos)})" if language == "en" else f"處理失敗的影片 ({len(failed_videos)})"):
+            for video in failed_videos:
+                display_text = video['title'] or video['url']
+                st.write(f"- {display_text}: {video['reason']}")
+    
+    if not processed_videos and not failed_videos:
+        st.error("Could not process any videos." if language == "en" else "無法處理任何影片。") 
