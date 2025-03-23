@@ -124,9 +124,9 @@ def process_single_video(url, content_type, save_to_md, embed_to_rag, bot, provi
         # Load video transcript
         with st.spinner("Extracting video transcript..." if language == "en" else "正在提取影片字幕..."):
             yt_loader = YoutubeLoader()
-            content = yt_loader.load(url)
+            success, content, dataset_name = yt_loader.process_video(url, language)
             
-            if not content:
+            if not success:
                 st.error("Could not extract transcript from this video." if language == "en" else "無法從此影片提取字幕。")
                 return
                 
@@ -444,8 +444,8 @@ def _process_single_video_content(video_info, yt_loader, chain, output_folder, s
         title = video_info.get('title', '')
         
         # Extract transcript
-        content = yt_loader.load(url)
-        if not content:
+        success, content, dataset_name = yt_loader.process_video(url, language)
+        if not success:
             raise ValueError("No transcript available")
             
         # Process with AI

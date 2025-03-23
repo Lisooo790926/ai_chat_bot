@@ -33,6 +33,17 @@ class YoutubeLoader:
         self.processed_content = []  # Store all processed content
         
     def process_video(self, video_url, language="en"):
+        """
+        Process a single YouTube video
+
+        Args:
+            video_url (str): URL of the YouTube video
+            language (str): Language of the video
+
+        Returns:
+            tuple: A tuple containing the success status, transcript text, and dataset name
+        """
+        
         try:
             logger.info(f"Fetching transcript for: {video_url}")
             video_id = parse_video_id(video_url)
@@ -143,7 +154,7 @@ class YoutubeLoader:
         except Exception as e:
             if "429" in str(e) and provider == "gemini":
                 logger.warning("Rate limit reached for Gemini, retrying with Azure")
-                return self._embed_batch(documents, "azure")
+            
             raise
 
 
