@@ -1,3 +1,7 @@
+"""
+This module contains the RAGBot class, which is responsible for generating responses using a RAG chain.
+"""
+
 from typing import List, Optional, AsyncGenerator
 import traceback
 import logging
@@ -8,18 +12,16 @@ from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
 from langchain import schema
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from qdrant_client import QdrantClient
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 from langchain_qdrant import QdrantVectorStore
 from dotenv import dotenv_values
 from pydantic import BaseModel
-from .embedding import get_embedding_model, get_vector_store_client
+from .embedding import get_embedding_model
+from .vector_store import VectorStoreManager
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Core models that can be used by both API and gRPC
 class ChatMessage(BaseModel):
     role: str
     content: str
@@ -37,13 +39,13 @@ class RAGBot:
     def __init__(self):
         self.config = dotenv_values(".env")
         self.datasets = self.config.get("QDRANT_DATASETS").split(",")
+        self.vector_manager = VectorStoreManager()
         self.system_prompt = (
             "You are an AI assistant that answers questions based on provided documents. If you don't know the answer based on the documents, say you don't know."
             "Please answer the question based on the following reference materials:"
             "Chat history: {chat_history}"
             "References: {context}"
         )
-        self.client = get_vector_store_client()
     
     def get_llm_and_embeddings(self, provider="azure"):
         """Get LLM and embeddings models based on provider choice"""
@@ -82,20 +84,33 @@ class RAGBot:
         
         try:
             generator_llm, embedding_llm = self.get_llm_and_embeddings(provider)
-           
-            # Determine provider-specific collection name
-            provider_collection = f"{collection_name}_{provider}" if provider != "azure" else collection_name
+            
+            # Get provider-specific collection name
+            provider_collection = self.vector_manager.get_collection_name(collection_name, provider)
             logger.info(f"Using collection: {provider_collection} with provider: {provider}")
             
             try:
-                # Try to use the provider-specific collection first
+                # Try to use the provider-specific collection
                 qdrant = QdrantVectorStore(
-                    client=self.client, 
+                    client=self.vector_manager.client, 
                     collection_name=provider_collection, 
                     embedding=embedding_llm
                 )
             except Exception as e:
-                qdrant = self.create_collection_if_not_found(provider, provider_collection, collection_name, e)
+                error_detail = traceback.format_exc()
+                logger.warning(f"Error accessing collection: {str(e)}\n{error_detail}")
+                
+                if "Not found: Collection" in str(e):
+                    logger.info(f"Collection {provider_collection} doesn't exist. Creating it.")
+                    vector_size = 3072 if provider == "gemini" else 1536
+                    self.vector_manager.create_collection(provider_collection, vector_size)
+                    qdrant = QdrantVectorStore(
+                        client=self.vector_manager.client, 
+                        collection_name=provider_collection, 
+                        embedding=embedding_llm
+                    )
+                else:
+                    raise
 
             if qdrant is None:
                 raise Exception("Failed to create collection")
@@ -139,54 +154,6 @@ class RAGBot:
             logger.error(f"Error generating response: {str(e)}\n{error_detail}")
             return f"Error generating response: {str(e)}\n\nDebug info: {type(e).__name__}"
 
-    def create_collection_if_not_found(self, provider: str, provider_collection: str, default_collection: str, e: Exception):
-        # If provider-specific collection doesn't exist, create it
-        error_detail = traceback.format_exc()
-        logger.warning(f"Error accessing collection: {str(e)}\n{error_detail}")
-        
-        try:
-            if "Not found: Collection" in str(e):
-                logger.info(f"Collection {provider_collection} doesn't exist. Creating it.")
-                # Get vector size based on provider
-                embedding_llm, vector_size = get_embedding_model(provider)
-                
-                # Create the collection with the right dimensions
-                self.client.create_collection(
-                    collection_name=provider_collection,
-                    vectors_config={
-                        "size": vector_size,
-                        "distance": "Cosine"
-                    },
-                    optimizers_config={
-                        "indexing_threshold": 20000
-                    },
-                    on_disk_payload=True
-                )
-                
-                # Create empty vector store
-                qdrant = QdrantVectorStore(
-                    client=self.client, 
-                    collection_name=provider_collection, 
-                    embedding=embedding_llm
-                )
-                return qdrant
-            else:
-                # For other errors, fall back to the main collection
-                logger.warning(f"Falling back to main collection: {provider_collection}")
-                qdrant = QdrantVectorStore(
-                    client=self.client, 
-                    collection_name=default_collection, 
-                    embedding=embedding_llm
-                )
-                return qdrant
-
-        except Exception as inner_e:
-            # If all else fails, return a helpful error message
-            inner_error_detail = traceback.format_exc()
-            logger.error(f"Error setting up vector store: {str(inner_e)}\n{inner_error_detail}")
-            yield f"I'm having trouble accessing the knowledge base. Error: {str(inner_e)}\n\nDebug info: {type(inner_e).__name__}"
-            return
-    
     def validate_dataset(self, dataset_name: str) -> bool:
         """Validate if dataset exists"""
         return dataset_name in self.datasets

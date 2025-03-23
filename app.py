@@ -4,6 +4,7 @@ from components.ragbot import RAGBot
 from ui.chat_tab import render_chat_tab
 from ui.upload_tab import render_upload_tab
 from ui.youtube_tab import render_youtube_tab
+from ui.vector_store_tab import render_vector_store_tab
 from utils.language import get_language_options, get_localization_dict, get_system_prompt
 
 # Configure logging
@@ -52,11 +53,8 @@ def main():
     )
     
     # Create tabs
-    tab1, tab2, tab3 = st.tabs([
-        txt["tab_chat"], 
-        txt["tab_upload"], 
-        txt["tab_youtube"]
-    ])
+    tabs = ["Chat", "Upload", "YouTube", "Vector Store"]
+    tab1, tab2, tab3, tab4 = st.tabs(tabs)
     
     # Render Chat tab
     with tab1:
@@ -64,11 +62,15 @@ def main():
     
     # Render Upload Documents tab
     with tab2:
-        render_upload_tab(dataset_name, provider)
+        render_upload_tab(provider, dataset_name)
     
     # Render YouTube tab
     with tab3:
         render_youtube_tab(bot, provider, dataset_name)
+    
+    # Render Vector Store tab
+    with tab4:
+        render_vector_store_tab(dataset_name)
 
 if __name__ == "__main__":
     main() 

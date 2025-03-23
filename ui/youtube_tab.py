@@ -77,7 +77,7 @@ def render_youtube_tab(bot, provider, dataset_name):
             
             **頻道模式：**
             - 輸入 YouTube 頻道的網址
-            - 選擇要處理的影片數量（最多 10 個）
+            - 選擇要處理的影片數量（最多 50 個）
             - 工具將為每個影片創建重點列表摘要
             
             **提示：**
@@ -106,7 +106,7 @@ def render_youtube_tab(bot, provider, dataset_name):
             
             **Channel Mode:**
             - Enter a URL to a YouTube channel
-            - Choose how many videos to process (up to 10)
+            - Choose how many videos to process (up to 50)
             - The tool will create bullet-point summaries for each video
             
             **Tips:**
@@ -160,9 +160,7 @@ def process_multiple_videos(urls, content_type, output_folder, save_to_md, embed
             os.makedirs(output_folder)
         
         progress_bar = st.progress(0)
-        generator_llm, _ = bot.get_llm_and_embeddings(provider)
-        system_prompt = _get_summary_prompt(content_type, language)
-        chain = create_processing_chain(generator_llm, system_prompt)
+        chain = create_processing_chain(bot, provider, content_type, language)
         
         return process_video_batch(
             urls, chain, output_folder, save_to_md, embed_to_rag,
@@ -185,9 +183,7 @@ def process_channel_videos(channel_url, max_videos, output_folder, save_to_md, e
             os.makedirs(output_folder)
             
         progress_bar = st.progress(0)
-        generator_llm, _ = bot.get_llm_and_embeddings(provider)
-        system_prompt = _get_summary_prompt("Bullet Points", language)
-        chain = create_processing_chain(generator_llm, system_prompt)
+        chain = create_processing_chain(bot, provider, "Bullet Points", language)
         
         return process_video_batch(
             videos, chain, output_folder, save_to_md, embed_to_rag,
@@ -209,23 +205,27 @@ def handle_output(content, video_id, save_to_md, embed_to_rag, bot, provider, da
             filename = f"youtube_{video_id}.md"
         
         if save_to_md:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".md") as tmp_file:
-                    tmp_path = tmp_file.name
-        tmp_file.write(content.encode('utf-8'))
-                    
-        with open(tmp_path, "r", encoding="utf-8") as f:
-            st.download_button(
-                label="Download as Markdown" if language == "en" else "下載為 Markdown",
-                data=f.read(),
-                file_name=filename,
-                mime="text/markdown",
-                key=f"download_{video_id}"
-            )
-                    
-        if embed_to_rag:
-            embed_to_rag_database(tmp_path, dataset_name, provider, language)
+            # Create temporary file and write content
+            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", encoding='utf-8') as tmp_file:
+                tmp_file.write(content)  # Write directly as string, no need to encode
+                tmp_path = tmp_file.name
+            
+            # Read and create download button
+            with open(tmp_path, "r", encoding="utf-8") as f:
+                st.download_button(
+                    label="Download as Markdown" if language == "en" else "下載為 Markdown",
+                    data=f.read(),
+                    file_name=filename,
+                    mime="text/markdown",
+                    key=f"download_{video_id}"
+                )
+            
+            # Handle RAG embedding if requested
+            if embed_to_rag:
+                embed_to_rag_database(tmp_path, dataset_name, provider, language)
 
-        os.unlink(tmp_path)
+            # Clean up temporary file
+            os.unlink(tmp_path)
             
     except Exception as e:
         handle_error(e, "handling file operations", language)
@@ -340,7 +340,7 @@ def _render_channel_tab(bot, provider, dataset_name, language, txt):
     )
     
     # Max videos to process
-    max_videos = st.slider(txt.get("max_videos", "Maximum videos to process"), 1, 10, 3)
+    max_videos = st.slider(txt.get("max_videos", "Maximum videos to process"), 1, 50, 3)
     
     # Summary style info
     st.info(txt.get("channel_info", "Channels will be processed using the 'Bullet Points' summary style for efficient processing."))
@@ -561,3 +561,30 @@ def display_batch_results(processed_videos, failed_videos, language):
     
     if not processed_videos and not failed_videos:
         st.error("Could not process any videos." if language == "en" else "無法處理任何影片。") 
+
+def create_processing_chain(bot, provider, content_type, language):
+    """
+    Create a processing chain including LLM setup and prompt creation
+    
+    Args:
+        bot: RAGBot instance
+        provider: The model provider ("azure" or "gemini")
+        content_type: Type of summary to generate
+        language: Current language setting
+        
+    Returns:
+        Chain: A LangChain chain for processing transcripts
+    """
+    # Get LLM model
+    generator_llm, _ = bot.get_llm_and_embeddings(provider)
+    
+    # Get appropriate system prompt
+    system_prompt = _get_summary_prompt(content_type, language)
+    
+    # Create and return the chain
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{transcript}")
+    ])
+    
+    return prompt | generator_llm 

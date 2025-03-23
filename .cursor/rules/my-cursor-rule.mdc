@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+- Do not have more than two layer nested "if", if necessary, create new method for reading
+
+
