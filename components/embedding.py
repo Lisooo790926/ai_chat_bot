@@ -11,11 +11,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
 from dotenv import dotenv_values
 from .vector_store import VectorStoreManager
-import logging
+from utils.logger import logger
 
-logger = logging.getLogger(__name__)
-
-def embed_text(collection, dataset, markdown_file, provider="azure", force_recreate=False):
+def embed_text(collection, dataset, markdown_file, provider="gemini", force_recreate=False):
     """
     Embeds the text from a file into a Qdrant collection.
     Args:
@@ -66,6 +64,7 @@ def embed_text(collection, dataset, markdown_file, provider="azure", force_recre
     documents = markdown_splitter.split_documents([doc])
 
     try:
+        logger.info(f"Starting embedding process for {markdown_file}")
         # return a vector store
         qdrant = QdrantVectorStore.from_documents(
             documents,
@@ -74,10 +73,16 @@ def embed_text(collection, dataset, markdown_file, provider="azure", force_recre
             collection_name=collection_name,
         )
 
-        print(f"Documents embedded into {collection_name} collection")
+        if force_recreate:
+            logger.info(f"Recreating collection {collection_name}")
+            # ... recreation code ...
+            
+        logger.info(f"Successfully embedded content into {collection_name}")
         return qdrant
     except Exception as e:
-        logger.error(f"Error embedding documents: {e}")
+        logger.error(f"Error embedding documents: {str(e)}")
+        if "429" in str(e):
+            logger.critical("API quota exceeded - immediate attention required")
         if "dimensions" in str(e) and not force_recreate:
             logger.info("Dimensions mismatch detected. Recreating collection...")
             return embed_text(collection, dataset, markdown_file, provider, force_recreate=True)

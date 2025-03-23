@@ -4,7 +4,6 @@ This module contains the RAGBot class, which is responsible for generating respo
 
 from typing import List, Optional, AsyncGenerator
 import traceback
-import logging
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import GoogleGenerativeAI, GoogleGenerativeAIEmbeddings
@@ -18,9 +17,7 @@ from dotenv import dotenv_values
 from pydantic import BaseModel
 from .embedding import get_embedding_model
 from .vector_store import VectorStoreManager
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from utils.logger import logger
 
 class ChatMessage(BaseModel):
     role: str
@@ -30,7 +27,7 @@ class ChatRequest(BaseModel):
     query: str
     chat_history: Optional[List[ChatMessage]] = []
     dataset_name: str
-    provider: str = "azure"
+    provider: str = "gemini"
 
 class ChatResponse(BaseModel):
     response: str
@@ -74,7 +71,7 @@ class RAGBot:
         chat_history: List[schema.HumanMessage],
         collection_name: str,
         dataset_name: str,
-        provider: str,
+        provider: str = "gemini",
     ) -> AsyncGenerator[str, None]:
         """Async generator for streaming responses"""
         prompt = ChatPromptTemplate.from_messages([
@@ -97,11 +94,10 @@ class RAGBot:
                     embedding=embedding_llm
                 )
             except Exception as e:
-                error_detail = traceback.format_exc()
-                logger.warning(f"Error accessing collection: {str(e)}\n{error_detail}")
+                logger.warning(f"Error accessing collection: {str(e)}")
                 
                 if "Not found: Collection" in str(e):
-                    logger.info(f"Collection {provider_collection} doesn't exist. Creating it.")
+                    logger.info(f"Creating new collection: {provider_collection}")
                     vector_size = 3072 if provider == "gemini" else 1536
                     self.vector_manager.create_collection(provider_collection, vector_size)
                     qdrant = QdrantVectorStore(

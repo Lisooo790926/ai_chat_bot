@@ -17,3 +17,4 @@ uvicorn
 grpcio
 grpcio-tools
 protobuf
+pytube

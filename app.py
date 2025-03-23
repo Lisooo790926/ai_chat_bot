@@ -42,7 +42,7 @@ def main():
     # Add provider selection in sidebar
     provider = st.sidebar.selectbox(
         txt["provider_select"],
-        options=["azure", "gemini"],
+        options=["gemini", "azure"],
         index=0
     )
     

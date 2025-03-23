@@ -5,9 +5,7 @@ This module contains functions for managing vector storage data in Qdrant.
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams, HnswConfigDiff, OptimizersConfigDiff
 from dotenv import dotenv_values
-import logging
-
-logger = logging.getLogger(__name__)
+from utils.logger import logger
 
 class VectorStoreManager:
     def __init__(self):
@@ -26,14 +24,13 @@ class VectorStoreManager:
             tuple: (number of deleted points, status message)
         """
         try:
-            # Check if collection exists
             collections = self.client.get_collections().collections
             collection_exists = any(c.name == collection_name for c in collections)
             
             if not collection_exists:
+                logger.error(f"Collection '{collection_name}' does not exist")
                 return 0, f"Collection '{collection_name}' does not exist"
 
-            # Delete points with matching dataset
             result = self.client.delete(
                 collection_name=collection_name,
                 points_selector=self.client.points_selector(
@@ -48,6 +45,7 @@ class VectorStoreManager:
                 )
             )
             
+            logger.info(f"Successfully cleaned {result.status.deleted_count} entries from {collection_name}")
             return result.status.deleted_count, "Success"
 
         except Exception as e:
@@ -121,7 +119,7 @@ class VectorStoreManager:
             logger.error(f"Error creating collection: {str(e)}")
             return False
 
-    def get_collection_name(self, base_name: str, provider: str) -> str:
+    def get_collection_name(self, base_name: str, provider: str = "gemini") -> str:
         """Get provider-specific collection name"""
         return f"{base_name}_{provider}" if provider != "azure" else base_name
 

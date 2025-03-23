@@ -8,10 +8,11 @@ from urllib.parse import parse_qs
 from urllib.parse import urlparse
 from yt_dlp import YoutubeDL
 import threading
-import time
 import functools
 from youtube_transcript_api import YouTubeTranscriptApi
-from dotenv import find_dotenv, load_dotenv
+from pytube import Playlist
+import logging
+from utils.logger import logger
 
 
 DEFAULT_LANGUAGES = ["zh-TW", "zh-Hant", "zh", "zh-Hans", "ja", "en", "ko"]
@@ -69,18 +70,31 @@ class YoutubeLoader:
         Returns:
             str: video subtitle
         """
-        video_id = parse_video_id(url)
+        try:
+            logger.info(f"Fetching transcript for: {url}")
+            video_id = parse_video_id(url)
 
-        transcript_pieces: list[dict[str, str | float]] = (
-            YouTubeTranscriptApi().get_transcript(video_id, self.languages)
-        )
+            transcript_pieces: list[dict[str, str | float]] = (
+                YouTubeTranscriptApi().get_transcript(video_id, self.languages)
+            )
 
-        lines = []
-        for transcript_piece in transcript_pieces:
-            text = str(transcript_piece.get("text", "")).strip()
-            if text:
-                lines.append(text)
-        return "\n".join(lines)
+            lines = []
+            for transcript_piece in transcript_pieces:
+                text = str(transcript_piece.get("text", "")).strip()
+                if text:
+                    lines.append(text)
+            transcript_text = "\n".join(lines)
+            
+            if not transcript_text:
+                logger.warning(f"No transcript available for: {url}")
+                return None
+                
+            logger.info(f"Successfully fetched transcript for: {url}")
+            return transcript_text
+            
+        except Exception as e:
+            logger.error(f"Error loading YouTube transcript: {str(e)}")
+            raise
 
 
 def parse_video_id(url: str) -> str:
@@ -135,3 +149,21 @@ def get_youtube_videos(channel_url):
         for entry in info.get("entries", [])
     ]
     return video_list
+
+
+def get_playlist_videos(playlist_url: str) -> list[dict]:
+    """
+    Get videos from a YouTube playlist
+    
+    Args:
+        playlist_url: URL of the YouTube playlist
+        
+    Returns:
+        list: List of video dictionaries with url and title
+    """
+    try:
+        playlist = Playlist(playlist_url)
+        return playlist.video_urls
+    except Exception as e:
+        logging.error(f"Error getting playlist: {str(e)}")
+        return []
