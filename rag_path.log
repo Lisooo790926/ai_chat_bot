@@ -1,0 +1,200 @@
+2025-03-23 15:41:11,458 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8
+2025-03-23 15:41:12,273 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8
+2025-03-23 15:41:15,552 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis
+2025-03-23 15:41:16,380 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis
+2025-03-23 15:41:20,548 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=glBhOQ1_RkE
+2025-03-23 15:41:21,496 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=glBhOQ1_RkE
+2025-03-23 15:41:25,625 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=A3Yx35KrSN0
+2025-03-23 15:41:26,535 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=A3Yx35KrSN0
+2025-03-23 15:41:30,526 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=lwe3_x50_uw
+2025-03-23 15:41:31,245 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=lwe3_x50_uw
+2025-03-23 15:41:36,083 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=inebiWdQW-4
+2025-03-23 15:41:36,786 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=inebiWdQW-4
+2025-03-23 15:41:40,028 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=cCpErV7To2o
+2025-03-23 15:41:40,732 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=cCpErV7To2o
+2025-03-23 15:41:43,692 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=Q9cNkUPXUB8
+2025-03-23 15:41:44,524 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=Q9cNkUPXUB8
+2025-03-23 15:41:47,830 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=v12IKvF6Cj8
+2025-03-23 15:41:48,754 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=v12IKvF6Cj8
+2025-03-23 15:41:52,365 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=bJZTJ7MjYqg
+2025-03-23 15:41:53,228 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=bJZTJ7MjYqg
+2025-03-23 16:06:55,926 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8
+2025-03-23 16:06:56,836 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8
+2025-03-23 16:07:11,623 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/生成式人工智慧導論_課程介紹.md
+2025-03-23 16:07:13,905 - rag_path - INFO - Successfully embedded content into bootcamp_gemini
+2025-03-23 16:07:13,910 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis
+2025-03-23 16:07:14,684 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis
+2025-03-23 16:07:18,802 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/什麼是生成式人工智慧 _What is Generative AI__.md
+2025-03-23 16:07:20,045 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:20,045 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:20,046 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=glBhOQ1_RkE
+2025-03-23 16:07:20,957 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=glBhOQ1_RkE
+2025-03-23 16:07:24,532 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/現在的生成式人工智慧厲害在哪裡.md
+2025-03-23 16:07:24,956 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:24,956 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:24,957 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=A3Yx35KrSN0
+2025-03-23 16:07:26,007 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=A3Yx35KrSN0
+2025-03-23 16:07:30,347 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/How to Train Yourself to Use AI if You Can_t Train.md
+2025-03-23 16:07:30,810 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:30,811 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:30,812 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=lwe3_x50_uw
+2025-03-23 16:07:31,631 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=lwe3_x50_uw
+2025-03-23 16:07:35,478 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Enhancing Language Model Capabilities Without Trai.md
+2025-03-23 16:07:35,896 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:35,897 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:35,900 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=inebiWdQW-4
+2025-03-23 16:07:36,871 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=inebiWdQW-4
+2025-03-23 16:07:40,195 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/模型協作_芙莉蓮的啟示與未來AI團隊.md
+2025-03-23 16:07:40,608 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:40,609 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:40,609 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=cCpErV7To2o
+2025-03-23 16:07:41,530 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=cCpErV7To2o
+2025-03-23 16:07:46,172 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/大型語言模型的修煉史_一_ Large Language Model Training Stage .md
+2025-03-23 16:07:46,579 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:46,579 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:46,582 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=Q9cNkUPXUB8
+2025-03-23 16:07:47,273 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=Q9cNkUPXUB8
+2025-03-23 16:07:51,830 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Unveiling the Secrets of Language Model Training_ .md
+2025-03-23 16:07:52,235 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:52,237 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:52,240 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=v12IKvF6Cj8
+2025-03-23 16:07:53,004 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=v12IKvF6Cj8
+2025-03-23 16:07:58,214 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Large Model Training - Stage 3_ Reinforcement Lear.md
+2025-03-23 16:07:58,634 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:07:58,634 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:07:58,636 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=bJZTJ7MjYqg
+2025-03-23 16:07:59,309 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=bJZTJ7MjYqg
+2025-03-23 16:08:03,324 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/大型語言模型未來的趨勢_用大型語言模型打造AI Agent.md
+2025-03-23 16:08:03,711 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:03,711 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:03,714 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=uhNsUCb2fJI
+2025-03-23 16:08:04,584 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=uhNsUCb2fJI
+2025-03-23 16:08:08,155 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Language Model Internals_ Understanding Transforme.md
+2025-03-23 16:08:08,561 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:08,561 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:08,562 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=rZzfqkfZhY8
+2025-03-23 16:08:09,548 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=rZzfqkfZhY8
+2025-03-23 16:08:14,365 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Video Title_ 我們能不能知道大型語言模型在想什麼 _Can We Know What L.md
+2025-03-23 16:08:15,610 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:15,610 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:15,612 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=Hk8Z0uhmWg4
+2025-03-23 16:08:16,352 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=Hk8Z0uhmWg4
+2025-03-23 16:08:21,203 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Video Title_ 語言模型的能力檢定 _Language Model Capability .md
+2025-03-23 16:08:22,466 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:22,467 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:22,470 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=MSnvknLywUc
+2025-03-23 16:08:23,120 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=MSnvknLywUc
+2025-03-23 16:08:27,237 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/大型語言模型的安全性議題.md
+2025-03-23 16:08:28,558 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:28,558 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:28,562 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=CNTondxaguo
+2025-03-23 16:08:29,244 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=CNTondxaguo
+2025-03-23 16:08:32,420 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Video Title_ 大型語言模型也會被詐騙 _Large Language Models Ca.md
+2025-03-23 16:08:33,624 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:33,626 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:33,629 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=QbwQR9sjWbs
+2025-03-23 16:08:34,828 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=QbwQR9sjWbs
+2025-03-23 16:08:39,177 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/生成式AI的生成策略.md
+2025-03-23 16:08:40,305 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:40,305 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:40,306 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=MAbGgsWKrg8
+2025-03-23 16:08:41,054 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=MAbGgsWKrg8
+2025-03-23 16:08:43,525 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Speculative Decoding_ A New Technique for Faster L.md
+2025-03-23 16:08:43,927 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:43,927 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:43,928 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=5H2bVEmYDNg
+2025-03-23 16:08:44,816 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=5H2bVEmYDNg
+2025-03-23 16:08:48,191 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Video Title.md
+2025-03-23 16:08:48,591 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:48,592 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:48,595 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=OYN_GvAqv-A
+2025-03-23 16:08:49,563 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=OYN_GvAqv-A
+2025-03-23 16:08:53,886 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/Video Title_ 經典影像生成方法介紹 _Variational Autoencoder_ .md
+2025-03-23 16:08:54,286 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:54,286 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:08:54,288 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=CgQ3lUOpXgc
+2025-03-23 16:08:54,939 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=CgQ3lUOpXgc
+2025-03-23 16:08:59,386 - rag_path - INFO - Starting embedding process for downloads/playlist_summaries/GPT-4o 語音技術解析.md
+2025-03-23 16:08:59,983 - rag_path - ERROR - Error embedding documents: Error embedding content: 429 Resource has been exhausted (e.g. check quota).
+2025-03-23 16:08:59,983 - rag_path - CRITICAL - API quota exceeded - immediate attention required
+2025-03-23 16:34:47,031 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,031 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,031 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,031 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,784 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,784 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,784 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,784 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:34:47,785 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:47,785 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:47,785 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:47,785 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:48,649 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:48,649 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:48,649 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:48,649 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:34:48,752 - rag_path - ERROR - Error in batch embedding: name 'uuid' is not defined
+2025-03-23 16:34:48,752 - rag_path - ERROR - Error in batch embedding: name 'uuid' is not defined
+2025-03-23 16:34:48,752 - rag_path - ERROR - Error in batch embedding: name 'uuid' is not defined
+2025-03-23 16:34:48,752 - rag_path - ERROR - Error in batch embedding: name 'uuid' is not defined
+2025-03-23 16:36:00,613 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:00,613 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:00,613 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:00,613 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:00,613 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:01,397 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:01,397 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:01,397 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:01,397 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:01,397 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:01,398 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:01,398 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:01,398 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:01,398 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:01,398 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:02,511 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:02,511 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:02,511 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:02,511 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:02,511 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:02,620 - rag_path - ERROR - Error in batch embedding: cannot access local variable 'uuid' where it is not associated with a value
+2025-03-23 16:36:02,620 - rag_path - ERROR - Error in batch embedding: cannot access local variable 'uuid' where it is not associated with a value
+2025-03-23 16:36:02,620 - rag_path - ERROR - Error in batch embedding: cannot access local variable 'uuid' where it is not associated with a value
+2025-03-23 16:36:02,620 - rag_path - ERROR - Error in batch embedding: cannot access local variable 'uuid' where it is not associated with a value
+2025-03-23 16:36:02,620 - rag_path - ERROR - Error in batch embedding: cannot access local variable 'uuid' where it is not associated with a value
+2025-03-23 16:36:43,513 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:43,513 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:43,513 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:43,513 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:43,513 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:43,513 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:44,284 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:44,284 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:44,284 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:44,284 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:44,284 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:44,284 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=AVIKFXLCPY8&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=2
+2025-03-23 16:36:44,286 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:44,286 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:44,286 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:44,286 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:44,286 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:44,286 - rag_path - INFO - Fetching transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:45,110 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:45,110 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:45,110 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:45,110 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:45,110 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:45,110 - rag_path - INFO - Successfully fetched transcript for: https://www.youtube.com/watch?v=JGtqpQXfJis&list=PLJV_el3uVTsPz6CTopeRp2L2t4aL_KgiI&index=3
+2025-03-23 16:36:50,518 - rag_path - WARNING - Rate limit reached for Gemini, retrying with Azure
+2025-03-23 16:36:50,518 - rag_path - WARNING - Rate limit reached for Gemini, retrying with Azure
+2025-03-23 16:36:50,518 - rag_path - WARNING - Rate limit reached for Gemini, retrying with Azure
+2025-03-23 16:36:50,518 - rag_path - WARNING - Rate limit reached for Gemini, retrying with Azure
+2025-03-23 16:36:50,518 - rag_path - WARNING - Rate limit reached for Gemini, retrying with Azure
+2025-03-23 16:36:50,518 - rag_path - WARNING - Rate limit reached for Gemini, retrying with Azure
+2025-03-23 16:36:54,543 - rag_path - ERROR - Error in batch embedding: Connection error.
+2025-03-23 16:36:54,543 - rag_path - ERROR - Error in batch embedding: Connection error.
+2025-03-23 16:36:54,543 - rag_path - ERROR - Error in batch embedding: Connection error.
+2025-03-23 16:36:54,543 - rag_path - ERROR - Error in batch embedding: Connection error.
+2025-03-23 16:36:54,543 - rag_path - ERROR - Error in batch embedding: Connection error.
+2025-03-23 16:36:54,543 - rag_path - ERROR - Error in batch embedding: Connection error.

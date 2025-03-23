@@ -8,7 +8,6 @@ from langchain_openai import AzureOpenAIEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from qdrant_client import QdrantClient
 from dotenv import dotenv_values
 from .vector_store import VectorStoreManager
 from utils.logger import logger
@@ -33,20 +32,7 @@ def embed_text(collection, dataset, markdown_file, provider="gemini", force_recr
     collection_name = vector_manager.get_collection_name(collection, provider)
 
     # Get the appropriate embedding model
-    if provider == "azure":
-        embedding_llm = AzureOpenAIEmbeddings(
-            azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
-            azure_deployment=config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
-            api_key=config.get("AZURE_OPENAI_KEY"),
-            openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
-        )
-        vector_size = 1536  # OpenAI embedding size
-    else:
-        embedding_llm = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-exp-03-07",
-            google_api_key=config.get("GOOGLE_API_KEY"),
-        )
-        vector_size = 3072  # Google embedding size
+    embedding_llm, vector_size = get_embedding_model(provider)
 
     # Create or recreate collection if needed
     if force_recreate or not vector_manager.collection_exists(collection_name):
@@ -58,8 +44,8 @@ def embed_text(collection, dataset, markdown_file, provider="gemini", force_recr
 
     markdown_splitter = RecursiveCharacterTextSplitter(
         separators=["#", "##", "###", "\n\n", "\n", " "],
-        chunk_size=1000,  # 可根據需求調整 chunk 大小
-        chunk_overlap=100,  # 重疊區域，避免語境斷裂
+        chunk_size=200,  # 可根據需求調整 chunk 大小
+        chunk_overlap=20,  # 重疊區域，避免語境斷裂
     )
     documents = markdown_splitter.split_documents([doc])
 

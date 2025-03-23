@@ -4,7 +4,7 @@ import os
 import re
 import traceback
 import logging
-from components.youtube_to_md import YoutubeLoader, parse_video_id, get_youtube_videos, get_playlist_videos
+from components.youtube_to_md import YoutubeLoader, get_youtube_videos, get_playlist_videos, parse_video_id
 from langchain_core.prompts import ChatPromptTemplate
 
 logger = logging.getLogger(__name__)
@@ -130,9 +130,6 @@ def process_single_video(url, content_type, save_to_md, embed_to_rag, bot, provi
                 st.error("Could not extract transcript from this video." if language == "en" else "無法從此影片提取字幕。")
                 return
                 
-        # Get video metadata for filename
-        video_id = parse_video_id(url)
-                
         with st.spinner("Processing content..." if language == "en" else "處理內容中..."):
             # Get LLM model and process content
             generator_llm, _ = bot.get_llm_and_embeddings(provider)
@@ -148,12 +145,15 @@ def process_single_video(url, content_type, save_to_md, embed_to_rag, bot, provi
             # Handle response
             markdown_content = response.content if hasattr(response, 'content') else response
             st.markdown(markdown_content)
-                    
-            # Handle file saving and RAG embedding
-            handle_output(markdown_content, video_id, save_to_md, embed_to_rag, bot, provider, dataset_name, language)
+
+            video_info = (
+                {"url": url, "title": ""}
+            )
+
+            _process_single_video_content(video_info, yt_loader, chain, "single", save_to_md, embed_to_rag, dataset_name, provider, language)
             
     except Exception as e:
-        handle_error(e, "processing YouTube video", language)
+        _handle_error(e, "processing YouTube video", language)
 
 def process_multiple_videos(urls, content_type, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
     """Process multiple YouTube videos"""
@@ -162,15 +162,15 @@ def process_multiple_videos(urls, content_type, output_folder, save_to_md, embed
             os.makedirs(output_folder)
         
         progress_bar = st.progress(0)
-        chain = create_processing_chain(bot, provider, content_type, language)
+        chain = _create_processing_chain(bot, provider, content_type, language)
         
-        return process_video_batch(
+        return _process_video_batch(
             urls, chain, output_folder, save_to_md, embed_to_rag,
             dataset_name, provider, language, progress_bar
         )
         
     except Exception as e:
-        handle_error(e, "processing multiple videos", language)
+        _handle_error(e, "processing multiple videos", language)
         return [], []
 
 def process_channel_videos(channel_url, max_videos, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
@@ -185,54 +185,52 @@ def process_channel_videos(channel_url, max_videos, output_folder, save_to_md, e
             os.makedirs(output_folder)
             
         progress_bar = st.progress(0)
-        chain = create_processing_chain(bot, provider, "Bullet Points", language)
+        chain = _create_processing_chain(bot, provider, "Bullet Points", language)
         
-        return process_video_batch(
+        return _process_video_batch(
             videos, chain, output_folder, save_to_md, embed_to_rag,
             dataset_name, provider, language, progress_bar
         )
         
     except Exception as e:
-        handle_error(e, "processing YouTube channel", language)
+        _handle_error(e, "processing YouTube channel", language)
 
-def handle_output(content, video_id, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
-    """Handle file saving and RAG embedding"""
+def process_playlist_videos(playlist_url, content_type, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
+    """Process videos from a YouTube playlist"""
     try:
-        title_match = re.search(r'# (.+)', content)
-        if title_match:
-            title = title_match.group(1)
-            safe_title = "".join(c if c.isalnum() or c in [' ', '-', '_'] else '_' for c in title)
-            filename = f"{safe_title[:50]}.md"
-        else:
-            filename = f"youtube_{video_id}.md"
-        
-        if save_to_md:
-            # Create temporary file and write content
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", encoding='utf-8') as tmp_file:
-                tmp_file.write(content)  # Write directly as string, no need to encode
-                tmp_path = tmp_file.name
+        # Get videos from playlist
+        with st.spinner("Fetching playlist videos..." if language == "en" else "正在獲取播放清單影片..."):
+            video_urls = get_playlist_videos(playlist_url)
             
-            # Read and create download button
-            with open(tmp_path, "r", encoding="utf-8") as f:
-                st.download_button(
-                    label="Download as Markdown" if language == "en" else "下載為 Markdown",
-                    data=f.read(),
-                    file_name=filename,
-                    mime="text/markdown",
-                    key=f"download_{video_id}"
+            if not video_urls:
+                st.error(
+                    "No videos found in this playlist." if language == "en" 
+                    else "在此播放清單中找不到影片。"
                 )
+                return
             
-            # Handle RAG embedding if requested
-            if embed_to_rag:
-                embed_to_rag_database(tmp_path, dataset_name, provider, language)
-
-            # Clean up temporary file
-            os.unlink(tmp_path)
-            
+            st.info(
+                f"Found {len(video_urls)} videos in playlist" if language == "en"
+                else f"在播放清單中找到 {len(video_urls)} 個影片"
+            )
+        
+        # Create output folder if needed
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        
+        # Process videos
+        progress_bar = st.progress(0)
+        chain = _create_processing_chain(bot, provider, content_type, language)
+        
+        return _process_video_batch(
+            video_urls, chain, output_folder, save_to_md, embed_to_rag,
+            dataset_name, provider, language, progress_bar
+        )
+        
     except Exception as e:
-        handle_error(e, "handling file operations", language)
+        _handle_error(e, "processing YouTube playlist", language)
 
-def embed_to_rag_database(file_path, dataset_name, provider, language):
+def _embed_to_rag_database(file_path, dataset_name, provider, language):
     """Embed content into RAG database"""
     try:
         from components.embedding import embed_text
@@ -253,7 +251,7 @@ def embed_to_rag_database(file_path, dataset_name, provider, language):
     except Exception as e:
         st.warning(f"Error adding to RAG database: {str(e)}" if language == "en" else f"添加到 RAG 數據庫時出錯: {str(e)}")
 
-def handle_error(error, context, language):
+def _handle_error(error, context, language):
     """Handle and display errors"""
     
     error_detail = traceback.format_exc()
@@ -268,15 +266,8 @@ def _render_single_video_tab(bot, provider, dataset_name, language, txt):
     youtube_url = st.text_input(txt.get("youtube_url", "Enter YouTube Video URL"), 
                                 placeholder="https://www.youtube.com/watch?v=...")
     
-    content_options = ["Detailed", "Concise", "Bullet Points"]
-    content_options_zh = ["詳細", "簡潔", "重點列表"]
-    content_type = st.radio(txt.get("summary_style", "Summary Style:"),
-                            options=content_options_zh if language == "zh-TW" else content_options,
-                            horizontal=True)
-    
-    if language == "zh-TW":
-        content_map = dict(zip(content_options_zh, content_options))
-        content_type = content_map.get(content_type, content_type)
+    # Use common content type selection
+    content_type = get_content_type_selection(language, "single")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -292,27 +283,14 @@ def _render_single_video_tab(bot, provider, dataset_name, language, txt):
 
 def _render_multiple_videos_tab(bot, provider, dataset_name, language, txt):
     """Render the multiple videos tab"""
-    # Multiple YouTube URLs input
     youtube_urls = st.text_area(
         txt.get("youtube_urls", "Enter YouTube Video URLs (one per line)"),
         placeholder="https://www.youtube.com/watch?v=...\nhttps://www.youtube.com/watch?v=...",
         height=100
     )
     
-    # Content type selection
-    content_options = ["Bullet Points", "Concise", "Detailed"]
-    content_options_zh = ["重點列表", "簡潔", "詳細"]
-    content_type = st.radio(
-        txt.get("summary_style", "Summary Style:"),
-        options=content_options_zh if language == "zh-TW" else content_options,
-        horizontal=True,
-        key="multi_content_type"
-    )
-    
-    # Map Chinese options back to English for processing
-    if language == "zh-TW":
-        content_map = dict(zip(content_options_zh, content_options))
-        content_type = content_map.get(content_type, content_type)
+    # Use common content type selection
+    content_type = get_content_type_selection(language, "multi")
     
     # Processing options
     col1, col2 = st.columns(2)
@@ -335,25 +313,13 @@ def _render_multiple_videos_tab(bot, provider, dataset_name, language, txt):
 
 def _render_playlist_tab(bot, provider, dataset_name, language, txt):
     """Render the playlist tab"""
-    # Playlist URL input
     playlist_url = st.text_input(
         txt.get("playlist_url", "Enter YouTube Playlist URL"), 
         placeholder="https://www.youtube.com/playlist?list=..."
     )
     
-    # Content type selection - using the same options as multiple videos
-    content_options = ["Bullet Points", "Concise", "Detailed"]
-    content_options_zh = ["重點列表", "簡潔", "詳細"]
-    content_type = st.radio(
-        txt.get("summary_style", "Summary Style:"),
-        options=content_options_zh if language == "zh-TW" else content_options,
-        horizontal=True,
-        key="playlist_content_type"
-    )
-    
-    if language == "zh-TW":
-        content_map = dict(zip(content_options_zh, content_options))
-        content_type = content_map.get(content_type, content_type)
+    # Use common content type selection
+    content_type = get_content_type_selection(language, "playlist")
     
     # Output folder
     output_folder = st.text_input(
@@ -385,41 +351,6 @@ def _render_playlist_tab(bot, provider, dataset_name, language, txt):
             )
         else:
             st.warning(txt.get("error_no_playlist", "Please enter a YouTube playlist URL"))
-
-def process_playlist_videos(playlist_url, content_type, output_folder, save_to_md, embed_to_rag, bot, provider, dataset_name, language):
-    """Process videos from a YouTube playlist"""
-    try:
-        # Get videos from playlist
-        with st.spinner("Fetching playlist videos..." if language == "en" else "正在獲取播放清單影片..."):
-            videos = get_playlist_videos(playlist_url)
-            
-            if not videos:
-                st.error(
-                    "No videos found in this playlist." if language == "en" 
-                    else "在此播放清單中找不到影片。"
-                )
-                return
-            
-            st.info(
-                f"Found {len(videos)} videos in playlist" if language == "en"
-                else f"在播放清單中找到 {len(videos)} 個影片"
-            )
-        
-        # Create output folder if needed
-        if not os.path.exists(output_folder):
-            os.makedirs(f"downloads/{output_folder}")
-        
-        # Process videos
-        progress_bar = st.progress(0)
-        chain = create_processing_chain(bot, provider, content_type, language)
-        
-        return process_video_batch(
-            videos, chain, output_folder, save_to_md, embed_to_rag,
-            dataset_name, provider, language, progress_bar
-        )
-        
-    except Exception as e:
-        handle_error(e, "processing YouTube playlist", language)
 
 def _get_summary_prompt(content_type, language):
     """Get the appropriate summary prompt based on content type and language"""
@@ -505,7 +436,7 @@ def _get_summary_prompt(content_type, language):
                 "Final thoughts and takeaways from the video."
             ) 
 
-def process_single_video_content(video_info, yt_loader, chain, output_folder, save_to_md, embed_to_rag, dataset_name, provider, language):
+def _process_single_video_content(video_info, yt_loader, chain, output_folder, save_to_md, embed_to_rag, dataset_name, provider, language):
     """Process a single video and return its processed content or None if failed"""
     try:
         # Get video details
@@ -529,16 +460,16 @@ def process_single_video_content(video_info, yt_loader, chain, output_folder, sa
             title = title_match.group(1) if title_match else f"youtube_{video_id}"
             
         safe_title = "".join(c if c.isalnum() or c in [' ', '-', '_'] else '_' for c in title)
-        filename = f"{output_folder}/{safe_title[:50]}.md"
+        filename = f"downloads/{output_folder}/{safe_title[:50]}.md"
         
         # Save to file if requested
         if save_to_md:
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(markdown_content)
             
-            # Add to RAG if requested
-            if embed_to_rag:
-                embed_to_rag_database(filename, dataset_name, provider, language)
+        # Add to RAG if requested
+        if embed_to_rag:
+            _embed_to_rag_database(filename, dataset_name, provider, language)
         
         return {
             "url": url,
@@ -557,74 +488,55 @@ def process_single_video_content(video_info, yt_loader, chain, output_folder, sa
             "reason": str(e)
         }
 
-def process_video_batch(videos, chain, output_folder, save_to_md, embed_to_rag, dataset_name, provider, language, progress_bar):
-    """Process a batch of videos and return results"""
-    yt_loader = YoutubeLoader()
-    processed_videos = []
-    failed_videos = []
+def _process_video_batch(video_urls, chain, output_folder, save_to_md, embed_to_rag, dataset_name, provider, language, progress_bar):
+    """Process multiple videos and batch embed their content"""
+    youtube_loader = YoutubeLoader()
+    processed_files = []
+    failed_urls = []
     
-    for i, video in enumerate(videos):
-        # Convert to standard video info format
-        video_info = (
-            {"url": video, "title": ""}  # For URL-only input
-            if isinstance(video, str)
-            else {"url": video['url'], "title": video['title']}  # For channel videos
-        )
-        
-        # Display processing status
-        status_text = video_info['title'] or video_info['url']
-        st.write(f"Processing video {i+1}/{len(videos)}: {status_text}" if language == "en" 
-                else f"處理影片 {i+1}/{len(videos)}: {status_text}")
-        
-        # Process video
-        result = process_single_video_content(
-            video_info, yt_loader, chain, output_folder, 
-            save_to_md, embed_to_rag, dataset_name, provider, language
-        )
-        
-        # Sort results
-        if result['success']:
-            logger.info(f"Successfully processed video: {status_text}")
-            processed_videos.append(result)
-        else:
-            logger.warning(f"Failed to process video: {status_text}")
-            failed_videos.append(result)
-        
-        # Update progress
-        progress_bar.progress((i + 1) / len(videos))
+    # Process all videos
+    with st.spinner("Processing videos..."):
+        for url in video_urls:
+            try:
+                success, result, dataset_name = youtube_loader.process_video(url, language)
+                if success:
+                    processed_files.append(result)
+                else:
+                    failed_urls.append((url, result))
+            except Exception as e:
+                logger.error(f"Error processing video {url}: {str(e)}")
+                failed_urls.append((url, str(e)))
     
-    # Display results
-    display_batch_results(processed_videos, failed_videos, language)
+    # Show processing results
+    _display_processing_results(processed_files, failed_urls)
     
-    return processed_videos, failed_videos
+    # Batch embed if we have successful processes
+    if processed_files:
+        _embed_processed_content(youtube_loader)
 
-def display_batch_results(processed_videos, failed_videos, language):
-    """Display the results of batch processing"""
-    if processed_videos:
-        st.success(f"Successfully processed {len(processed_videos)} videos!" if language == "en" 
-                  else f"成功處理 {len(processed_videos)} 個影片！")
-        
-        # Show preview of first video
-        if processed_videos:
-            with st.expander("Preview first processed video" if language == "en" else "預覽第一個處理的影片"):
-                st.markdown(processed_videos[0]["content"])
-        
-        # List all processed videos
-        with st.expander("All Processed Videos" if language == "en" else "所有處理的影片"):
-            for video in processed_videos:
-                display_text = video['title'] or video['url']
-                st.write(f"- {display_text} → {video['file']}")
-    
-    if failed_videos:
-        with st.expander(f"Failed Videos ({len(failed_videos)})" if language == "en" else f"處理失敗的影片 ({len(failed_videos)})"):
-            for video in failed_videos:
-                display_text = video['title'] or video['url']
-                st.write(f"- {display_text}: {video['reason']}")
-    
-    if not processed_videos and not failed_videos:
-        st.error("Could not process any videos." if language == "en" else "無法處理任何影片。") 
+def _display_processing_results(processed_files, failed_urls):
+    """Display the results of video processing"""
+    if processed_files:
+        st.success(f"Successfully processed {len(processed_files)} videos")
+    if failed_urls:
+        st.error("Failed to process these videos:")
+        for url, error in failed_urls:
+            st.error(f"{url}: {error}")
 
-def create_processing_chain(bot, provider, content_type, language):
+def _embed_processed_content(youtube_loader):
+    """Embed all processed content to RAG database"""
+    with st.spinner("Embedding all content to RAG database..."):
+        try:
+            success, message = youtube_loader.batch_embed_content(provider="gemini")
+            if success:
+                st.success("Successfully embedded all content!")
+            else:
+                st.error(f"Error during batch embedding: {message}")
+        except Exception as e:
+            logger.error(f"Error during batch embedding: {str(e)}")
+            st.error(f"Error during batch embedding: {str(e)}") 
+
+def _create_processing_chain(bot, provider, content_type, language):
     """
     Create a processing chain including LLM setup and prompt creation
     
@@ -650,3 +562,30 @@ def create_processing_chain(bot, provider, content_type, language):
     ])
     
     return prompt | generator_llm 
+
+def get_content_type_selection(language, key_suffix=""):
+    """Common function to handle content type selection across all tabs
+    
+    Args:
+        language: Current language setting
+        key_suffix: Suffix for the radio button key to make it unique
+        
+    Returns:
+        str: Selected content type in English
+    """
+    content_options = ["Bullet Points", "Concise", "Detailed"]
+    content_options_zh = ["重點列表", "簡潔", "詳細"]
+    
+    content_type = st.radio(
+        st.session_state.get('langs', {}).get(language, {}).get("summary_style", "Summary Style:"),
+        options=content_options_zh if language == "zh-TW" else content_options,
+        horizontal=True,
+        key=f"content_type_{key_suffix}"
+    )
+    
+    # Map Chinese options back to English for processing
+    if language == "zh-TW":
+        content_map = dict(zip(content_options_zh, content_options))
+        content_type = content_map.get(content_type, content_type)
+    
+    return content_type 

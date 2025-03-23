@@ -3,5 +3,5 @@ media/*
 .env
 __pycache__/*
 video_summaries/*
-*_summaries/*
+downloads/*
 *.pyc
